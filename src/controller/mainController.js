@@ -5,19 +5,18 @@ const emailValidator = require("email-validator");
 const createCollege = async function (req, res) {
     try {
         let data = req.body;
-        // console.log(data.name)
-        // const name=data.name.split(" ").join("")
-        // console.log(name)
+        if (Object.keys(data).length == 0) {
+            return res.status(404).send({ status: false, msg: "Body Not found" })
+        }
         if (data) {
             if (data.name) {
-                const name=data.name.split(" ").join("");
-                data.name=name;
-                // data.save()
-            }else{
-                return res.status(400).send({status:false,error:"Name is required"})
+                const name = data.name.split(" ").join("");
+                data.name = name;
+            } else {
+                return res.status(400).send({ status: false, error: "Name is required" })
             }
             if (!data.fullName) {
-                return res.send({status:false,error:"Fullname required"})
+                return res.send({ status: false, error: "Fullname required" })
             }
             if (!data.logoLink) {
                 return res.status(400).send({ status: false, error: "LogoLink is required" });
@@ -36,60 +35,87 @@ const createCollege = async function (req, res) {
 const createIntern = async function (req, res) {
     try {
         let data = req.body;
-        if(data){
-            if(!data.name){
-                return res.send({msg:"Name is Required!!"})
+        let mobile=data.mobile;
+        const valiNo=Number(mobile);
+        // console.log(valiNo)
+        if (Object.keys(data).length == 0) {
+            return res.status(404).send({ status: false, err: "Body Not Found!!" })
+        }
+        if (data) {
+            if (!data.name) {
+                return res.send({ msg: "Name is Required!!" })
             }
-            if(!data.email){
-                return res.status(400).send({msg:"email is required"})
+            if (!data.email) {
+                return res.status(400).send({ msg: "email is required" })
             }
-            if(!emailValidator.validate(data.email)){
-                return res.status(404).send({status:false,msg:"Inavlid email"})
+            if (!emailValidator.validate(data.email)) {
+                return res.status(404).send({ status: false, err: "Inavlid email" })
             }
-            if(!data.mobile){
-                return res.status(400).send({msg:"mobile is required"})
+            if (!data.mobile) {
+                return res.status(400).send({ msg: "mobile is required" })
             }
-            if(!(data.mobile.length ==10)){
-                return res.status(400).send({status:false,msg:"Invalid Mobile No."})
+            if (!(data.mobile.length === 10)) {
+                return res.status(400).send({ status: false, err: "Invalid Mobile No." })
             }
-            if(!data.collegeId){
-                return res.status(400).send({msg:"CollegeId required !!"})
+            if (isNaN(valiNo)) {
+                return res.status(400).send({ status: false, msg: "Invalid No." })
             }
-            let findCollege= await collegeModel.findById(data.collegeId);
-            if(!findCollege){
-                return res.status(400).send({msg:"Invalid CollegeId"})
+            //College Id is not Mandatory
+
+            // if (!data.collegeId) {
+            //     return res.status(400).send({ msg: "CollegeId required !!" })
+            // }
+            if (data.collegeId) {
+                let findCollege = await collegeModel.findById(data.collegeId);
+
+                if (!findCollege) {
+                    return res.status(400).send({ err: "Invalid CollegeId" })
+                }
             }
         }
         let result = await internModel.create(data);
         res.send({ data: result });
-    } catch (err) {
-        res.status(500).send({ msg: err });
+    }
+    catch (err) {
+        res.status(500).send({ error: err });
     }
 }
 
 const getCollegeDetails = async function (req, res) {
     try {
-        let data = req.query.collegeName;
-        if(!data){
-            return res.status(400).send({status:false,msg:"CollegeName is Required!!"})
-        }
-        if(data){
-            const collegename= data.split(" ").join("");
-            data=collegename
-        }
-        let findData= await collegeModel.findOne({name:data});
-        if(!findData){
-            return res.status(400).send({status:false,msg:"CollegeName is Invalid"})
-        }
-        if(data && findData){
+        let queryData = req.query;
+        let data = queryData.collegeName;
 
-        
-        let result = await collegeModel.findOne({ name: data })//.select({_id:1});
-        let result2 = await internModel.find({ collegeId: { $eq: result._id } });
-        res.status(201).send({ status: true, data:result,interest:result2 });
+        if (Object.keys(queryData).length > 1) {
+            return res.status(400).send({ msg: "Only one param is required-->'collegeName" })
         }
+        if (!data) {
+            return res.status(400).send({ status: false, msg: "CollegeName is Required!!" })
+        }
+        let result = await collegeModel.findOne({ name: data });
+        // console.log(typeof result)
+        // res.send(result)
+        const { name, fullName, logoLink } = result;
+
+        if (!result) {
+            return res.status(404).send({ msg: "CollegeName is Invalid" })
+        }
+        let result2 = await internModel.find({ collegeId: { $eq: result._id } }).select({_id:1,email:1,name:1,mobile:1});
+        if (!result2) {
+            return res.status(404).send({ status: false, msg: "No Interns Found for this College" })
+        }
+        // res.send(result2)
+        const finalData = {
+            name: name,
+            fullName: fullName,
+            logoLink: logoLink,
+            interest: result2
+        }
+        // res.status(201).send({ status: true, data: result, interest: result2 });
+        res.status(201).send({data:finalData})
+
     } catch (err) {
-        res.status(400).send({ msg: err })
+        res.status(400).send({ error: err })
     }
 
 }
