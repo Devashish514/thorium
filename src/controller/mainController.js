@@ -16,20 +16,20 @@ const createCollege = async function (req, res) {
                 return res.status(400).send({ status: false, error: "Name is required" })
             }
             if (!data.fullName) {
-                return res.send({ status: false, error: "Fullname required" })
+                return res.status(400).send({ status: false, error: "Fullname required" })
             }
             if (!data.logoLink) {
                 return res.status(400).send({ status: false, error: "LogoLink is required" });
             }
         }
         else {
-            return res.status(400).send({ status: false, msg: "No data found" })
+            return res.status(404).send({ status: false, msg: "No data found" })
         }
         let result = await collegeModel.create(data);
-        res.status(201).send({ data: result });
+        res.status(200).send({ data: result });
     }
     catch (err) {
-        res.status(404).send({ aag: err });
+        res.status(500).send({ aag: err });
     }
 }
 const createIntern = async function (req, res) {
@@ -43,13 +43,13 @@ const createIntern = async function (req, res) {
         }
         if (data) {
             if (!data.name) {
-                return res.send({ msg: "Name is Required!!" })
+                return res.status(400).send({ msg: "Name is Required!!" })
             }
             if (!data.email) {
                 return res.status(400).send({ msg: "email is required" })
             }
             if (!emailValidator.validate(data.email)) {
-                return res.status(404).send({ status: false, err: "Inavlid email" })
+                return res.status(400).send({ status: false, err: "Inavlid email" })
             }
             if (!data.mobile) {
                 return res.status(400).send({ msg: "mobile is required" })
@@ -74,7 +74,7 @@ const createIntern = async function (req, res) {
             }
         }
         let result = await internModel.create(data);
-        res.send({ data: result });
+        res.status(200).send({ data: result });
     }
     catch (err) {
         res.status(500).send({ error: err });
@@ -98,7 +98,7 @@ const getCollegeDetails = async function (req, res) {
         const { name, fullName, logoLink } = result;
 
         if (!result) {
-            return res.status(404).send({ msg: "CollegeName is Invalid" })
+            return res.status(400).send({ msg: "CollegeName is Invalid" })
         }
         let result2 = await internModel.find({ collegeId: { $eq: result._id } }).select({_id:1,email:1,name:1,mobile:1});
         if (!result2) {
@@ -112,10 +112,10 @@ const getCollegeDetails = async function (req, res) {
             interest: result2
         }
         // res.status(201).send({ status: true, data: result, interest: result2 });
-        res.status(201).send({data:finalData})
+        res.status(200).send({data:finalData})
 
     } catch (err) {
-        res.status(400).send({ error: err })
+        res.status(500).send({ error: err })
     }
 
 }
