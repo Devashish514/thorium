@@ -84,22 +84,24 @@ const createIntern = async function (req, res) {
 const getCollegeDetails = async function (req, res) {
     try {
         let queryData = req.query;
-        let data = queryData.collegeName;
+        let {collegeName} = queryData
+        // console.log(collegeName)
 
         if (Object.keys(queryData).length > 1) {
             return res.status(400).send({ msg: "Only one param is required-->'collegeName" })
         }
-        if (!data) {
+        if (!collegeName) {
             return res.status(400).send({ status: false, msg: "CollegeName is Required!!" })
         }
-        let result = await collegeModel.findOne({ name: data });
-        // console.log(typeof result)
-        // res.send(result)
-        const { name, fullName, logoLink } = result;
-
+        let result = await collegeModel.findOne({ name: collegeName });
         if (!result) {
             return res.status(400).send({ msg: "CollegeName is Invalid" })
         }
+        // console.log(typeof result)
+        // res.send(result)
+        const { name, fullName, logoLink } = result;
+        
+        
         let result2 = await internModel.find({ collegeId: { $eq: result._id } }).select({_id:1,email:1,name:1,mobile:1});
         if (!result2) {
             return res.status(404).send({ status: false, msg: "No Interns Found for this College" })
@@ -109,7 +111,7 @@ const getCollegeDetails = async function (req, res) {
             name: name,
             fullName: fullName,
             logoLink: logoLink,
-            interest: result2
+            interest: result2.length ? result2 : res.status(404).send({ status: false, msg: "No Interns Found for this College" })
         }
         // res.status(201).send({ status: true, data: result, interest: result2 });
         res.status(200).send({data:finalData})
