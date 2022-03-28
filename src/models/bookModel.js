@@ -1,11 +1,13 @@
 const mongoose = require("mongoose");
 
-const ObjectId = mongoose.Schema.Types.ObjectId
+const ObjectId = mongoose.Schema.Types.ObjectId;
+
+const moment = require("moment");
+const reviewModel = require("./reviewModel");
 
 const bookSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true,
         unique: true
     },
     excerpt: {
@@ -19,16 +21,14 @@ const bookSchema = new mongoose.Schema({
     },
     ISBN: {
         type: String,
-        required: true,
         unique: true
     },
     category: {
         type: String,
-        required: true
     },
     subcategory: {
         type: String,
-        require: true
+
     },
     reviews: {
         type: Number,
@@ -39,13 +39,14 @@ const bookSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    releasedAt: {
-        // value: Date.now(),
-        // required: true
-
+    isUpdated:{
+        type:Boolean,
+        default:false
     },
-    // createdAt: { timestamp: true },
-    // updatedAt: { timestamp: true },
-},{timestamps:true})
+    releasedAt: { type: String, default: moment().format('MMMM Do YYYY, h:mm:ss a') },
+    createdAt: { type: String, default: moment().format('MMMM Do YYYY, h:mm:ss a') },
+    updatedAt: { type: String, default: moment().format('MMMM Do YYYY, h:mm:ss a') },
+    reviewsData: [{ type: Object, default: [] }]
+})
 
-module.exports= mongoose.model("bookModel",bookSchema);
+module.exports = mongoose.model("bookModel", bookSchema);
