@@ -40,7 +40,8 @@
 
 
 
-// // let str1= "123-456-7a89-0985".split("");
+let str1= "123-45   6-7a89-098             5".split(" ").join("");
+console.log(str1)
 // // console.log(str1)
 // // for(var j in str1){
 // //     const indexof= str1.indexOf("-")
@@ -114,5 +115,7 @@
 
 // console.log(Boolean(!""))
 
-console.log("r i".split(" ").join(""))
+// console.log("r i".split(" ").join(""));
 
+// let a ="ABCd";
+// console.a("this is a")

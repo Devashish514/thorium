@@ -5,6 +5,7 @@ const emailValidator = require("email-validator");
 const jwt = require("jsonwebtoken");
 const { find } = require("../models/userModel");
 const moment = require("moment");
+const { response } = require("express");
 
 
 const createUser = async function (req, res) {
@@ -70,7 +71,7 @@ const createUser = async function (req, res) {
 
         }
         let savedData = await userModel.create(data);
-        res.status(201).send({ status: true, message: savedData });
+        res.status(201).send({ status: true, message: "Data successfully created", data: savedData });
     } catch (err) {
         console.log(err);
         res.status(500).send({ status: false, message: err });
@@ -121,8 +122,8 @@ const createBook = async function (req, res) {
             return res.status(400).send({ status: false, message: "No body Found" });
         }
         if (data) {
-            if (!data.title) {
-                return res.status(400).send({ status: false, message: "title is Mandatory..!!" });
+            if (!data.title || typeof data.title != "string") {
+                return res.status(400).send({ status: false, message: "Missing title or Invalid Title.." });
             } else {
                 if (data.title.split(" ").join("").length == 0) {
                     return res.status(400).send({ status: false, message: 'title cannot be empty...' });
@@ -150,6 +151,9 @@ const createBook = async function (req, res) {
                     }
                 }
                 const check = isbn.join("");
+                if (check.length != 13) {
+                    return res.status(400).send({ status: false, message: "Invalid ISBN.." })
+                }
                 // console.log(check)
                 const check2 = Number(check);
                 if (isNaN(check2)) {
@@ -157,7 +161,10 @@ const createBook = async function (req, res) {
                 }
 
             } else {
-                return res.status(400).send({ status: false, message: "ISBN is required...!" });
+                if (data.ISBN.split(" ").join("").length == 0) return response.status(400).send({ status: false, message: "Cannot be empty" });
+                else {
+                    return res.status(400).send({ status: false, message: "ISBN is required...!" });
+                }
             }
             if (!data.category) {
                 return res.status(400).send({ status: false, message: "category is required...!" });
@@ -274,23 +281,33 @@ const updateBooks = async function (req, res) {
         }
         if (dataToUpdate) {
             if (dataToUpdate.title) {
+                if (typeof dataToUpdate.title != "string") return res.status(400).send({ status: false, message: 'Invalid Title.' });
+
                 if (dataToUpdate.title === bookData.title) {
                     return res.status(400).send({ status: false, message: "Book is already present with this title" });
                 }
-                if (dataToUpdate.title.split(" ").join("").length == 0 && typeof dataToUpdate.title == "string") {
-                    return res.status(400).send({ status: false, message: 'title cannot be empty...' });
+                if (dataToUpdate.title.split(" ").join("").length == 0) {
+                    return res.status(400).send({ status: false, message: 'Invalid Title' });
                 }
+
                 bookData.title = dataToUpdate.title;
             } if (dataToUpdate.excerpt) {
-                if (dataToUpdate.excerpt.split(" ").join("").length == 0 && typeof dataToUpdate.excerpt == "string") {
-                    return res.status(400).send({ status: false, message: 'either "excerpt empty" or "invalid format' });
+                if (typeof dataToUpdate.excerpt != "string") return res.status(400).send({ status: false, message: 'Invalid excerpt...' });
+
+                if (dataToUpdate.excerpt.split(" ").join("").length == 0) {
+                    return res.status(400).send({ status: false, message: 'either "excerpt empty" or "invalid format"' });
                 }
                 bookData.excerpt = dataToUpdate.excerpt;
             } if (dataToUpdate.releasedAt) {
                 bookData.releasedAt = moment().format('MMMM Do YYYY, h:mm:ss a');
-            } if (dataToUpdate.ISBN) {
+
+            } if (dataToUpdate.ISBN ) {
+                dataToUpdate.ISBN=dataToUpdate.ISBN.split(" ").join("");
                 if (dataToUpdate.ISBN === bookData.ISBN) {
                     return res.status(400).send({ status: false, message: "Book is already present with this ISBN" });
+                } 
+                if (dataToUpdate.ISBN.split(" ").join("").length == 0) {
+                    return res.status(400).send({ status: false, message: "Invalid ISBN.." });
                 }
                 const isbn = dataToUpdate.ISBN.split("");
                 for (var i in isbn) {
@@ -301,6 +318,9 @@ const updateBooks = async function (req, res) {
                     }
                 }
                 const check = isbn.join("");
+                if (check.length != 13) {
+                    return res.status(400).send({ status: false, message: "Invalid ISBN length...(must be 13)", note: "exclude -" })
+                }
                 // console.log(check)
                 const check2 = Number(check);
                 if (isNaN(check2)) {
@@ -308,6 +328,8 @@ const updateBooks = async function (req, res) {
                 }
                 bookData.ISBN = dataToUpdate.ISBN;
 
+            } else {
+                return res.status(400).sned({ status: false, message: "Invalid ISBN.." });
             }
 
             bookData.isUpdated = true
@@ -380,6 +402,10 @@ const createReview = async function (req, res) {
             }
             if (!data.rating || typeof data.rating != "number") {
                 return res.status(400).send({ status: false, message: "Missing Rating or Invalid syntax.." });
+            } else {
+                if (data.rating <= 0 || data.rating > 5) {
+                    return res.status(400).send({ status: false, message: "Invalid Ratings" });
+                }
             }
         }
         let result = await reviewModel.create(data);
@@ -462,7 +488,7 @@ const deleteReview = async function (req, res) {
         bookData.reviews -= 1;
         reviewData.save();
         bookData.save();
-        res.status(200).send({ status: true, message: "Data successfully Deleted..", review: reviewData, book: bookData });
+        res.status(200).send({ status: true, message: "Data successfully Deleted.." }); //review: reviewData, book: bookData });
     } else {
         return res.status(404).send({ status: false, message: "params are required" });
     }

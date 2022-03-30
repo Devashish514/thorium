@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const authorize = async function (req, res,next) {
+const authorize = async function (req, res, next) {
     try {
         let token = req.headers["x-auth-token"];
         if (!token) {
@@ -11,7 +11,7 @@ const authorize = async function (req, res,next) {
                 return res.status(400).send({ status: false, message: "Invalid Token" });
             } else {
                 req.validate = validateUser.userId; // this validate stores userId of the authorize user in request object
-               // console.log(req)  // gives everything in request object 
+                // console.log(req)  // gives everything in request object 
                 next();
             }
         }
