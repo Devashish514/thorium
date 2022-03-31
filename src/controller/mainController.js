@@ -21,26 +21,26 @@ const createUser = async function (req, res) {
 
         if (data) {
             if (!data.title) {
-                return res.status(400).send({ status: false, message: "Title is required!" });
+                return res.status(404).send({ status: false, message: "Title is required!" });
             }
             if (!data.name) {
                 return res.status(404).send({ status: false, message: "Name is Required" });
             } else {
                 if (typeof data.name != "string") {
-                    return res.status(400).send({ status: false, message: "invalid name" });
+                    return res.status(403).send({ status: false, message: "invalid name" });
                 }
                 const name = data.name.split(" ").join("");
                 if (name.length == 0) {
-                    return res.status(400).send({ status: false, message: "invalid name" });
+                    return res.status(403).send({ status: false, message: "invalid name" });
                 }
             }
             if (!data.phone) {
-                return res.status(400).send({ status: false, message: "phone is Required" });
+                return res.status(404).send({ status: false, message: "phone is Required" });
             }
 
             if (data.phone) {
                 if (isNaN(mobile)) {
-                    return res.status(400).send({ status: false, message: "Invalid Phone " });
+                    return res.status(403).send({ status: false, message: "Invalid Phone " });
                 }
                 // validating for Indian Mobile No.
                 const check3 = (arr) => {
@@ -65,7 +65,7 @@ const createUser = async function (req, res) {
             }
             if (data.password) {
                 if (data.password.length < 8 || data.password.length > 15) {
-                    return res.status(400).send({ status: false, message: "Password Format Invalid" });
+                    return res.status(403).send({ status: false, message: "Password Format Invalid" });
                 }
             }
 
@@ -92,7 +92,7 @@ const login = async function (req, res) {
 
         let result = await userModel.findOne({ email: email, password: password });
         if (!result) {
-            return res.status(400).send({ status: false, message: "Invalid Userid or Password" });
+            return res.status(401).send({ status: false, message: "Invalid Userid or Password" });
 
         }
         let payload = { userId: result._id };
@@ -100,7 +100,7 @@ const login = async function (req, res) {
         if (token) {
             res.setHeader("x-auth-token", token);
         }
-        res.status(200).send({ status: true, message: "User Logged In successfully..", data: token });
+        res.status(202).send({ status: true, message: "User Logged In successfully..", data: token });
     } catch (err) {
         console.log(err);
         res.status(500).send({ status: false, message: err });
@@ -115,29 +115,29 @@ const createBook = async function (req, res) {
     try {
         //Authorize Route
         if (req.validate != req.query.userId) {
-            return res.status(404).send({ status: false, message: "Not Authorize" });
+            return res.status(401).send({ status: false, message: "Not Authorize" });
         }
         let data = req.body;
         if (Object.keys(data).length == 0) {
-            return res.status(400).send({ status: false, message: "No body Found" });
+            return res.status(404).send({ status: false, message: "No body Found" });
         }
         if (data) {
             if (!data.title || typeof data.title != "string") {
-                return res.status(400).send({ status: false, message: "Missing title or Invalid Title.." });
+                return res.status(403).send({ status: false, message: "Missing title or Invalid Title.." });
             } else {
                 if (data.title.split(" ").join("").length == 0) {
-                    return res.status(400).send({ status: false, message: 'title cannot be empty...' });
+                    return res.status(403).send({ status: false, message: 'title cannot be empty...' });
                 }
             }
             if (!data.excerpt) {
-                return res.status(400).send({ status: false, message: "excerpt is Mandatory..!!" });
+                return res.status(403).send({ status: false, message: "excerpt is Mandatory..!!" });
             } if (!data.userId) {
-                return res.status(400).send({ status: false, message: "userId is Mandatory..!!" });
+                return res.status(403).send({ status: false, message: "userId is Mandatory..!!" });
 
             } else {
                 let findUser = await userModel.findOne({ _id: data.userId });
                 if (!findUser) {
-                    return res.status(400).send({ status: false, message: "Invalid User !!" });
+                    return res.status(401).send({ status: false, message: "Invalid User !!" });
                 }
 
             }
@@ -152,12 +152,12 @@ const createBook = async function (req, res) {
                 }
                 const check = isbn.join("");
                 if (check.length != 13) {
-                    return res.status(400).send({ status: false, message: "Invalid ISBN.." })
+                    return res.status(403).send({ status: false, message: "Invalid ISBN.." })
                 }
                 // console.log(check)
                 const check2 = Number(check);
                 if (isNaN(check2)) {
-                    return res.status(400).send({ status: false, message: "Invalid ISBN" });
+                    return res.status(403).send({ status: false, message: "Invalid ISBN" });
                 }
 
             } else {
@@ -390,10 +390,13 @@ const createReview = async function (req, res) {
                 if (!findId) {
                     return res.status(400).send({ status: false, message: "Invalid BookId" });
                 }
+                if(findId.isDeleted){
+                    return res.status(403).send({status:false,message:"Cannot review a Deleted Book"})
+                }
             }
             if (data.reviewedBy) {
                 if (typeof data.reviewedBy != "string") {
-                    return res.status(400).send({ status: false, message: "Invalid Format.." });
+                    return res.status(400).send({ status: false, message: "Invalid reviewer's name Format.." });
                 } else {
                     if (data.reviewedBy.split(" ").join("").length == 0) {
                         return res.status(400).send({ status: false, message: "Required reviewer's name or review as a guest" });
@@ -493,7 +496,4 @@ const deleteReview = async function (req, res) {
         return res.status(404).send({ status: false, message: "params are required" });
     }
 }
-
-
-
 module.exports = { createUser, login, createBook, getFilteredBooks, createReview, getBooksById, updateBooks, deleteBooks, updateReview, deleteReview };
