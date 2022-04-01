@@ -126,13 +126,13 @@ const createBook = async function (req, res) {
                 return res.status(403).send({ status: false, message: "Missing title or Invalid Title.." });
             } else {
                 if (data.title.split(" ").join("").length == 0) {
-                    return res.status(403).send({ status: false, message: 'title cannot be empty...' });
+                    return res.status(400).send({ status: false, message: 'title cannot be empty...' });
                 }
             }
             if (!data.excerpt) {
-                return res.status(403).send({ status: false, message: "excerpt is Mandatory..!!" });
+                return res.status(400).send({ status: false, message: "excerpt is Mandatory..!!" });
             } if (!data.userId) {
-                return res.status(403).send({ status: false, message: "userId is Mandatory..!!" });
+                return res.status(400).send({ status: false, message: "userId is Mandatory..!!" });
 
             } else {
                 let findUser = await userModel.findOne({ _id: data.userId });
@@ -152,12 +152,12 @@ const createBook = async function (req, res) {
                 }
                 const check = isbn.join("");
                 if (check.length != 13) {
-                    return res.status(403).send({ status: false, message: "Invalid ISBN.." })
+                    return res.status(400).send({ status: false, message: "Invalid ISBN.." })
                 }
                 // console.log(check)
                 const check2 = Number(check);
                 if (isNaN(check2)) {
-                    return res.status(403).send({ status: false, message: "Invalid ISBN" });
+                    return res.status(400).send({ status: false, message: "Invalid ISBN" });
                 }
 
             } else {
@@ -171,6 +171,9 @@ const createBook = async function (req, res) {
             }
             if (!data.subcategory) {
                 return res.status(400).send({ status: false, message: "subcategory is required...!" });
+            }
+            if(!data.releasedAt){
+                return res.status(400).send({ status: false, message: "releasedAt is required...!" });
             }
             if (data.reviews) {
                 if (!(typeof data.reviews == "number")) {
@@ -211,6 +214,9 @@ const getFilteredBooks = async function (req, res) {
         // console.log(findData)
 
         let result = await bookModel.find(findData).select({ _id: 1, title: 1, excerpt: 1, userId: 1, category: 1, releasedAt: 1, reviews: 1 });
+        if(!result){
+            return res.status(404).send({ status: false, message: "No books found!" });
+        }
         //Sorting Array in alphabetical Order as per BOOks Title.....
         result.sort(function (a, b) {
             const titleA = a.title.toUpperCase();
@@ -241,11 +247,12 @@ const getBooksById = async function (req, res) {
         if (!bookId) {
             return res.status(400).send({ status: false, message: "BookId is required.." });
         }
+        
         let data = await bookModel.findById(bookId);
         if (!data) {
             return res.status(404).send({ status: false, message: "No Book By this Id.." });
         }
-        let review = await reviewModel.find({ bookId: bookId }).select({ _id: 1, bookId: 1, reviewedBy: 1, reviewedAt: 1, rating: 1, review: 1 });
+        let review = await reviewModel.find({ bookId: bookId,isDeleted:false}).select({ _id: 1, bookId: 1, reviewedBy: 1, reviewedAt: 1, rating: 1, review: 1 });
         if (data.reviewsData) {
             for (let i = 0; i < review.length; i++) {
                 data.reviewsData.push(review[i]);
